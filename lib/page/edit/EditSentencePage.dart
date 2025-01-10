@@ -42,7 +42,7 @@ class _EditSentencePageState extends State<EditSentencePage> {
     try {
       final QuerySnapshot sentencesSnapshot = await FirebaseFirestore.instance
           .collection('Saved_Sentences')
-          .where('type', isEqualTo: type)
+          .where('title', isEqualTo: type)
           .get();
 
       setState(() {
@@ -56,47 +56,69 @@ class _EditSentencePageState extends State<EditSentencePage> {
   }
 
   // Өгүүлбэрийг засварлах
-  void _editSentence(DocumentSnapshot sentenceDoc) {
-    final TextEditingController controller = TextEditingController(
-      text: sentenceDoc['sentence'],
-    );
+void _editSentence(DocumentSnapshot sentenceDoc) {
+  // Бүх талбаруудыг хадгалах зориулалттай Map
+  Map<String, dynamic> updatedFields = Map<String, dynamic>.from(sentenceDoc.data() as Map);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Өгүүлбэр засах'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Өгүүлбэр'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Болих'),
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        return AlertDialog(
+          title: const Text('Өгүүлбэр засах'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: updatedFields.keys.map((key) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: key, // Талбарын нэр
+                    ),
+                    controller: TextEditingController(
+                      text: updatedFields[key]?.toString(),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        updatedFields[key] = value;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await sentenceDoc.reference.update({'sentence': controller.text.trim()});
+          actions: [
+            TextButton(
+              onPressed: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Өгүүлбэр амжилттай шинэчлэгдлээ!')),
-                );
-                _fetchSentencesByType(_selectedType!); // Шүүлтийг шинэчлэх
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Алдаа гарлаа: $e')),
-                );
-              }
-            },
-            child: const Text('Хадгалах'),
-          ),
-        ],
-      ),
-    );
-  }
+              },
+              child: const Text('Болих'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await sentenceDoc.reference.update(updatedFields);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Өгүүлбэр амжилттай шинэчлэгдлээ!')),
+                  );
+                  _fetchSentencesByType(_selectedType!);
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Алдаа гарлаа: $e')),
+                  );
+                }
+              },
+              child: const Text('Хадгалах'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -139,8 +161,8 @@ class _EditSentencePageState extends State<EditSentencePage> {
                 itemBuilder: (context, index) {
                   final sentenceDoc = _filteredSentences[index];
                   return ListTile(
-                    title: Text(sentenceDoc['sentence']),
-                    subtitle: Text('Төрөл: ${sentenceDoc['type']}'),
+                    title: Text(sentenceDoc['word']), // `sentence` биш, `title`
+                    // subtitle: Text('Төрөл: ${sentenceDoc['type']}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () => _editSentence(sentenceDoc),

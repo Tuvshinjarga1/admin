@@ -42,11 +42,11 @@ class _EditWordPageState extends State<EditWordPage> {
     try {
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('Saved_Word')
-          .where('type', isEqualTo: name) // 'type' талбар нь 'name' утгатай
+          .where('type', isEqualTo: name) // `type` талбар нь `name`-тэй тэнцэх
           .get();
 
       setState(() {
-        _filteredWords = snapshot.docs;
+        _filteredWords = snapshot.docs; // Шүүгдсэн үгс
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,65 +55,96 @@ class _EditWordPageState extends State<EditWordPage> {
     }
   }
 
-  // 'Saved_Word' collection-ийн 'englishWord' болон 'mongolianWord' засах
+  // 'Saved_Word' collection-ийн бүх талбарыг засах
   void _editSavedWord(DocumentSnapshot wordDoc) {
-    final TextEditingController englishController = TextEditingController(
-      text: wordDoc['englishWord'],
+    final TextEditingController exampleEnController = TextEditingController(
+      text: wordDoc['exampleEn'], // 'exampleEn' талбарын утгыг авах
     );
-    final TextEditingController mongolianController = TextEditingController(
-      text: wordDoc['mongolianWord'],
+    final TextEditingController exampleMnController = TextEditingController(
+      text: wordDoc['exampleMn'], // 'exampleMn' талбарын утгыг авах
+    );
+    final TextEditingController mntController = TextEditingController(
+      text: wordDoc['mnt'], // 'mnt' талбарын утгыг авах
+    );
+    final TextEditingController pronounceController = TextEditingController(
+      text: wordDoc['pronounce'], // 'pronounce' талбарын утгыг авах
+    );
+    final TextEditingController typeController = TextEditingController(
+      text: wordDoc['type'], // 'type' талбарын утгыг авах
+    );
+    final TextEditingController wordController = TextEditingController(
+      text: wordDoc['word'], // 'word' талбарын утгыг авах
     );
 
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Үг засах'),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: englishController,
-              decoration: const InputDecoration(labelText: 'English Word'),
-            ),
-            TextField(
-              controller: mongolianController,
-              decoration: const InputDecoration(labelText: 'Mongolian Word'),
-            ),
-          ],
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Үг засах'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: mntController,
+                decoration: const InputDecoration(labelText: 'MNT'),
+              ),
+              TextField(
+                controller: wordController,
+                decoration: const InputDecoration(labelText: 'Word'),
+              ),
+              TextField(
+                controller: pronounceController,
+                decoration: const InputDecoration(labelText: 'Pronounce'),
+              ),
+              TextField(
+                controller: typeController,
+                decoration: const InputDecoration(labelText: 'Type'),
+              ),
+              TextField(
+                controller: exampleEnController,
+                decoration: const InputDecoration(labelText: 'Example in English'),
+              ),
+              TextField(
+                controller: exampleMnController,
+                decoration: const InputDecoration(labelText: 'Example in Mongolian'),
+              ),
+            ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text('Болих'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            try {
-              await wordDoc.reference.update({
-                'englishWord': englishController.text.trim(),
-                'mongolianWord': mongolianController.text.trim(),
-              });
+        actions: [
+          TextButton(
+            onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Үг амжилттай шинэчлэгдлээ!')),
-              );
-              _fetchWordsBySelectedName(_selectedWord!); // Шүүлтийг шинэчлэх
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Алдаа гарлаа: $e')),
-              );
-            }
-          },
-          child: const Text('Хадгалах'),
-        ),
-      ],
-    ),
-  );
-
+            },
+            child: const Text('Болих'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await wordDoc.reference.update({
+                  'exampleEn': exampleEnController.text.trim(),
+                  'exampleMn': exampleMnController.text.trim(),
+                  'mnt': mntController.text.trim(), // 'mnt' => 'mongolianWord'
+                  'pronounce': pronounceController.text.trim(),
+                  'type': typeController.text.trim(),
+                  'word': wordController.text.trim(), // 'word' => 'englishWord'
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Үг амжилттай шинэчлэгдлээ!')),
+                );
+                _fetchWordsBySelectedName(_selectedWord!); // Шүүлтийг шинэчлэх
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Алдаа гарлаа: $e')),
+                );
+              }
+            },
+            child: const Text('Хадгалах'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -157,11 +188,13 @@ class _EditWordPageState extends State<EditWordPage> {
                 itemBuilder: (context, index) {
                   final wordDoc = _filteredWords[index];
                   return ListTile(
-                    title: Text(wordDoc['type']),
-                    subtitle: Text('English: ${wordDoc['englishWord']} \nMongolian: ${wordDoc['mongolianWord']}'),
+                    // title: Text(wordDoc['type']), // 'type' талбарын утга
+                    subtitle: Text(
+                      'English: ${wordDoc['word']} \nMongolian: ${wordDoc['mnt']}',
+                    ),
                     trailing: IconButton(
                       icon: const Icon(Icons.edit),
-                      onPressed: () => _editSavedWord(wordDoc), // Edit saved word
+                      onPressed: () => _editSavedWord(wordDoc), // Үгийг засах
                     ),
                   );
                 },

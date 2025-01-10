@@ -9,7 +9,15 @@ class AddSentencePage extends StatefulWidget {
 }
 
 class _AddSentencePageState extends State<AddSentencePage> {
-  final TextEditingController _sentenceController = TextEditingController();
+  final TextEditingController _typeController = TextEditingController();
+  final TextEditingController _wordController = TextEditingController();
+  final TextEditingController _mntController = TextEditingController();
+  final TextEditingController _meaningController = TextEditingController();
+  final TextEditingController _meaningMntController = TextEditingController();
+  final TextEditingController _exampleController = TextEditingController();
+  final TextEditingController _exampleTranslateController =
+      TextEditingController();
+
   List<String> _typeNames = [];
   String? _selectedType;
 
@@ -40,33 +48,56 @@ class _AddSentencePageState extends State<AddSentencePage> {
 
   // Save Sentence to Firestore
   Future<void> _saveSentence() async {
-    if (_sentenceController.text.trim().isEmpty || _selectedType == null) {
+    if (_typeController.text.trim().isEmpty ||
+        _wordController.text.trim().isEmpty ||
+        _mntController.text.trim().isEmpty ||
+        _meaningController.text.trim().isEmpty ||
+        _meaningMntController.text.trim().isEmpty ||
+        _exampleController.text.trim().isEmpty ||
+        _exampleTranslateController.text.trim().isEmpty ||
+        _selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Өгүүлбэр болон төрлийг сонгоно уу.')),
+        const SnackBar(content: Text('Бүх талбарыг бөглөнө үү.')),
       );
       return;
     }
 
     try {
       await FirebaseFirestore.instance.collection('Saved_Sentences').add({
-        'sentence': _sentenceController.text.trim(),
-        'type': _selectedType,
-        'createdAt': FieldValue.serverTimestamp(),
+        'type': _typeController.text.trim(),
+        'word': _wordController.text.trim(),
+        'title': _selectedType,
+        'mnt': _mntController.text.trim(),
+        'meaning': _meaningController.text.trim(),
+        'meaningMnt': _meaningMntController.text.trim(),
+        'example': _exampleController.text.trim(),
+        'exampleTranslate': _exampleTranslateController.text.trim(),
+        // 'createdAt': FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Урьдач өгүүлбэр амжилттай хадгалагдлаа!')),
+        const SnackBar(content: Text('Өгүүлбэр амжилттай хадгалагдлаа!')),
       );
 
-      _sentenceController.clear();
-      setState(() {
-        _selectedType = _typeNames.isNotEmpty ? _typeNames[0] : null; // Reset to the first item
-      });
+      _clearFields();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Алдаа гарлаа: $e')),
       );
     }
+  }
+
+  void _clearFields() {
+    _typeController.clear();
+    _wordController.clear();
+    _mntController.clear();
+    _meaningController.clear();
+    _meaningMntController.clear();
+    _exampleController.clear();
+    _exampleTranslateController.clear();
+    setState(() {
+      _selectedType = _typeNames.isNotEmpty ? _typeNames[0] : null;
+    });
   }
 
   @override
@@ -77,41 +108,91 @@ class _AddSentencePageState extends State<AddSentencePage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Төрөл сонгох:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            DropdownButton<String>(
-              value: _selectedType,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedType = newValue;
-                });
-              },
-              items: _typeNames.map<DropdownMenuItem<String>>((String type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _sentenceController,
-              decoration: const InputDecoration(
-                labelText: 'Өгүүлбэр оруулна уу.',
-                border: OutlineInputBorder(),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Төрөл сонгох:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _saveSentence,
-              child: const Text('Өгүүлбэр Хадгалах'),
-            ),
-          ],
+              DropdownButton<String>(
+                value: _selectedType,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedType = newValue;
+                  });
+                },
+                items: _typeNames.map<DropdownMenuItem<String>>((String type) {
+                  return DropdownMenuItem<String>(
+                    value: type,
+                    child: Text(type),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _typeController,
+                decoration: const InputDecoration(
+                  labelText: 'Ямар төрлийнх вэ? Жш: interjection/ярианы хэллэг',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _wordController,
+                decoration: const InputDecoration(
+                  labelText: 'Англи үг оруулна уу.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _mntController,
+                decoration: const InputDecoration(
+                  labelText: 'Монгол орчуулга оруулна уу.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _meaningController,
+                decoration: const InputDecoration(
+                  labelText: 'Англи үгийн утгыг оруулна уу.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _meaningMntController,
+                decoration: const InputDecoration(
+                  labelText: 'Монгол үгийн утгыг оруулна уу.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _exampleController,
+                decoration: const InputDecoration(
+                  labelText: 'Жишээ өгүүлбэр (Англи).',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _exampleTranslateController,
+                decoration: const InputDecoration(
+                  labelText: 'Жишээ өгүүлбэр (Монгол).',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _saveSentence,
+                child: const Text('Өгүүлбэр Хадгалах'),
+              ),
+            ],
+          ),
         ),
       ),
     );
